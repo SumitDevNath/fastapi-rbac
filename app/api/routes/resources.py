@@ -100,3 +100,21 @@ async def delete_project(
     """
     service = ProjectService(db)
     await service.delete_project(project_id)
+
+@router.get(
+    "/my",
+    response_model=List[ProjectResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List projects owned by the currently authenticated user"
+)
+async def list_my_projects(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission(Permission.PROJECT_READ))
+):
+    """
+    Returns only the projects where owner_id matches current_user.id.
+    """
+    service = ProjectService(db)
+    return await service.list_user_projects(user_id=current_user.id, skip=skip, limit=limit)

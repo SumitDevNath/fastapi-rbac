@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.exceptions.custom_exceptions import (
-    AppException,
     AuthenticationFailedError,
     PermissionDeniedError,
     ResourceConflictError,
@@ -64,6 +63,28 @@ def register_exception_handlers(app: FastAPI) -> None:
                     "code": "FORBIDDEN",
                     "message": exc.message,
                     "details": exc.details
+                }
+            }
+        )
+
+    @app.exception_handler(HTTPException)
+    async def handle_http_exception(request: Request, exc: HTTPException):
+        code_map = {
+            400: "BAD_REQUEST",
+            401: "AUTHENTICATION_FAILED",
+            403: "FORBIDDEN",
+            404: "NOT_FOUND",
+            409: "RESOURCE_CONFLICT",
+        }
+        code = code_map.get(exc.status_code, "HTTP_ERROR")
+        return JSONResponse(
+            status_code=exc.status_code,
+            headers=exc.headers,
+            content={
+                "error": {
+                    "code": code,
+                    "message": exc.detail,
+                    "details": None
                 }
             }
         )

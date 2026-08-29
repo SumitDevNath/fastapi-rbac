@@ -1,5 +1,4 @@
 from datetime import timedelta
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.security import (
@@ -8,6 +7,11 @@ from app.core.security import (
     verify_password
 )
 from app.db.models import User, UserRole
+from app.exceptions.custom_exceptions import (
+    AuthenticationFailedError,
+    PermissionDeniedError,
+    ResourceConflictError
+)
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserRegister, UserResponse
@@ -21,10 +25,7 @@ class AuthService:
         """Registers a new user after verifying email uniqueness."""
         existing_user = await self.user_repo.get_by_email(user_in.email)
         if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="A user with this email address already exists."
-            )
+            raise ResourceConflictError("A user with this email address already exists.")
 
         hashed_password = get_password_hash(user_in.password)
         assigned_role = user_in.role or UserRole.VIEWER
@@ -37,30 +38,14 @@ class AuthService:
         return new_user
 
     async def authenticate_user(self, login_data: LoginRequest) -> TokenResponse:
-        """
-        Authenticates user credentials and generates a signed JWT token:
-        1. Queries user by email.
-        2. Verifies password against stored Argon2id hash.
-        3. Confirms account is active.
-        4. Issues JWT access token.
-        """
-        # 1. Fetch user by email
+        """Authenticates user credentials and issues a signed JWT."""
         user = await self.user_repo.get_by_email(login_data.email)
-
         # 2. Verify existence and password in constant time
         if not user or not verify_password(login_data.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password.",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
+            raise AuthenticationFailedError("Invalid email or password.")
 
-        # 3. Check account activation status
         if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Account is deactivated. Please contact support."
-            )
+            raise PermissionDeniedError("Account is deactivated. Please contact support.")
 
         # 4. Generate signed JWT access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

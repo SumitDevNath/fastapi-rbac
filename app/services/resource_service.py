@@ -77,3 +77,12 @@ class ProjectService:
     async def delete_project(self, project_id: int) -> None:
         project = await self.get_project(project_id)
         await self.project_repo.delete(project)
+
+    async def list_user_projects(
+        self,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100
+    ) -> List[Project]:
+        """Retrieves projects owned exclusively by user_id."""
+        return await self.project_repo.list_by_owner(owner_id=user_id, skip=skip, limit=limit)
