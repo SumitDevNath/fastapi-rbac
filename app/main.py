@@ -1,19 +1,16 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.api.routes import health
+from app.api.routes import auth, health
 from app.core.config import settings
 from app.db.database import Base, engine
-# Import models so Base.metadata detects them
 import app.db.models  # noqa: F401
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create tables if they do not exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
-    # Shutdown: Dispose DB engine connection pool
     await engine.dispose()
 
 
@@ -25,7 +22,9 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Register Sub-Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", tags=["Root"])
