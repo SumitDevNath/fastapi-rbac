@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.api.routes import auth, health
+from app.api.routes import auth, users, health
 from app.core.config import settings
 from app.db.database import Base, engine
 import app.db.models  # noqa: F401
@@ -25,7 +25,7 @@ app = FastAPI(
 # Register Sub-Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
-
+app.include_router(users.router, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Root"])
 async def root():
