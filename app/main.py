@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.api.routes import auth, users, resources, health
+from app.api.routes import auth, health, resources, users
 from app.core.config import settings
 from app.db.database import Base, engine
+from app.exceptions.handlers import register_exception_handlers
 import app.db.models  # noqa: F401
 
 
@@ -22,11 +23,15 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Register Sub-Routers
+# 1. Register Global Exception Handlers
+register_exception_handlers(app)
+
+# 2. Register Sub-Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(resources.router, prefix=settings.API_V1_STR)
+
 
 @app.get("/", tags=["Root"])
 async def root():
