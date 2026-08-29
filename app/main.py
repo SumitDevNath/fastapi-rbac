@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.api.routes import auth, users, health
+from app.api.routes import auth, users, resources, health
 from app.core.config import settings
 from app.db.database import Base, engine
 import app.db.models  # noqa: F401
@@ -26,6 +26,7 @@ app = FastAPI(
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
+app.include_router(resources.router, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Root"])
 async def root():
