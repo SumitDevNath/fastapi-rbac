@@ -27,7 +27,7 @@ export const registerSchema = z.object({
     .max(128, "Password must not exceed 128 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one digit"),
-  role: z.enum(["ADMIN", "MANAGER", "EDITOR", "VIEWER"]).default("VIEWER"),
+  role: z.enum(["ADMIN", "MANAGER", "EDITOR", "VIEWER"]),
 });
 
 export type RegisterFormData = z.infer<typeof registerSchema>;
