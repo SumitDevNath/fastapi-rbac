@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useToast } from "../../../contexts/ToastContext";
 import {
   useProjects,
   useCreateProject,
@@ -23,6 +24,7 @@ import {
 
 export const ProjectsPage: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
   const {
     data: projects,
     isLoading,
@@ -40,7 +42,6 @@ export const ProjectsPage: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  // Permission Checks (for UI rendering convenience)
   const canCreateOrEdit =
     role === "ADMIN" || role === "MANAGER" || role === "EDITOR";
   const canDelete = role === "ADMIN" || role === "MANAGER";
@@ -65,16 +66,17 @@ export const ProjectsPage: React.FC = () => {
           id: editingProject.id,
           data: formData,
         });
+        toast.success(`Project "${formData.title}" updated successfully!`);
       } else {
         await createMutation.mutateAsync(formData);
+        toast.success(`Project "${formData.title}" created successfully!`);
       }
       setModalOpen(false);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setModalError(err.message);
-      } else {
-        setModalError("Failed to save project.");
-      }
+      const msg =
+        err instanceof Error ? err.message : "Failed to save project.";
+      setModalError(msg);
+      toast.error(msg, "Action Failed");
     }
   };
 
@@ -82,8 +84,11 @@ export const ProjectsPage: React.FC = () => {
     if (window.confirm(`Are you sure you want to delete "${projectTitle}"?`)) {
       try {
         await deleteMutation.mutateAsync(projectId);
+        toast.success(`Project "${projectTitle}" was deleted.`);
       } catch (err: unknown) {
-        alert(err instanceof Error ? err.message : "Failed to delete project.");
+        const msg =
+          err instanceof Error ? err.message : "Failed to delete project.";
+        toast.error(msg, "Deletion Denied");
       }
     }
   };
@@ -97,13 +102,16 @@ export const ProjectsPage: React.FC = () => {
             Project Management
           </h1>
           <p className="text-sm text-slate-500">
-            Real-time CRUD resource center powered by TanStack Query mutations.
+            Real-time CRUD resource center with integrated toast notifications.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch();
+              toast.info("Synchronizing with SQLite database...");
+            }}
             disabled={isFetching}
             className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium py-2 px-3.5 rounded-lg transition-colors shadow-xs"
           >
