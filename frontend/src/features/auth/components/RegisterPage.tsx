@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { registerSchema, type RegisterFormData } from "../schemas/authSchemas";
+import { useAuth } from "../../../contexts/AuthContext";
+import {
+  registerSchema,
+  type RegisterFormData,
+} from "../../../schemas/authSchemas";
 
 interface RegisterPageProps {
   onNavigateToLogin: () => void;

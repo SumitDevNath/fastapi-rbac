@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { storage } from "../utils/storage";
 import type { User, UserRole } from "../types/auth";
 import type { LoginFormData, RegisterFormData } from "../schemas/authSchemas";
-import { authService } from "../api/authService";
+import { authService } from "../features/auth/api/authService";
 
 interface AuthContextType {
   user: User | null;

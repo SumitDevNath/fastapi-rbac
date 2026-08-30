@@ -1,6 +1,9 @@
-import type { LoginFormData, RegisterFormData } from "../schemas/authSchemas";
-import type { TokenResponse, User } from "../types/auth";
-import { apiClient } from "./apiClient";
+import { apiClient } from "../../../api/apiClient";
+import type {
+  LoginFormData,
+  RegisterFormData,
+} from "../../../schemas/authSchemas";
+import type { TokenResponse, User } from "../../../types/auth";
 
 export const authService = {
   login: async (credentials: LoginFormData): Promise<TokenResponse> => {
