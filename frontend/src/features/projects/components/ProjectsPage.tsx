@@ -8,16 +8,17 @@ import {
   useDeleteProject,
 } from "../hooks/useProjects";
 import { ProjectModal } from "./ProjectModal";
+import { LoadingSkeleton } from "../../../components/common/LoadingSkeleton";
+import { EmptyState } from "../../../components/common/EmptyState";
+import { ErrorState } from "../../../components/common/ErrorState";
 import type { Project } from "../../../types/project";
 import type { ProjectFormData } from "../../../schemas/projectSchemas";
 import {
   FolderKanban,
   Plus,
   RefreshCw,
-  AlertCircle,
   Calendar,
   User as UserIcon,
-  Layers,
   Edit2,
   Trash2,
 } from "lucide-react";
@@ -102,7 +103,7 @@ export const ProjectsPage: React.FC = () => {
             Project Management
           </h1>
           <p className="text-sm text-slate-500">
-            Real-time CRUD resource center with integrated toast notifications.
+            Real-time CRUD resource center with decoupled state feedback.
           </p>
         </div>
 
@@ -110,7 +111,7 @@ export const ProjectsPage: React.FC = () => {
           <button
             onClick={() => {
               refetch();
-              toast.info("Synchronizing with SQLite database...");
+              toast.info("Synchronizing cache with FastAPI...");
             }}
             disabled={isFetching}
             className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium py-2 px-3.5 rounded-lg transition-colors shadow-xs"
@@ -134,59 +135,34 @@ export const ProjectsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Loading Skeleton */}
-      {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs animate-pulse space-y-4"
-            >
-              <div className="h-5 bg-slate-200 rounded w-2/3"></div>
-              <div className="h-4 bg-slate-100 rounded w-full"></div>
-              <div className="h-4 bg-slate-100 rounded w-4/5"></div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* 1. Loading State */}
+      {isLoading && <LoadingSkeleton variant="card" count={3} />}
 
-      {/* Error State */}
+      {/* 2. Error State with Retry Button */}
       {isError && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center space-y-3">
-          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle size={24} />
-          </div>
-          <h3 className="text-base font-bold text-rose-900">
-            Failed to load projects
-          </h3>
-          <p className="text-sm text-rose-700 max-w-md mx-auto">
-            {error instanceof Error ? error.message : "An error occurred."}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold py-2 px-4 rounded-lg"
-          >
-            Retry Request
-          </button>
-        </div>
+        <ErrorState
+          title="Failed to Load Projects"
+          message={
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred."
+          }
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
       )}
 
-      {/* Empty State */}
+      {/* 3. Empty State with CTA */}
       {!isLoading && !isError && projects && projects.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-3">
-          <div className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto">
-            <Layers size={28} />
-          </div>
-          <h3 className="text-base font-bold text-slate-800">
-            No Projects Found
-          </h3>
-          <p className="text-sm text-slate-500 max-w-sm mx-auto">
-            Get started by creating your first project using the button above.
-          </p>
-        </div>
+        <EmptyState
+          title="No Projects in Database"
+          description="Get started by creating your first organizational project."
+          actionLabel={canCreateOrEdit ? "Create First Project" : undefined}
+          onAction={canCreateOrEdit ? handleOpenCreate : undefined}
+        />
       )}
 
-      {/* Project Cards Grid */}
+      {/* 4. Success State */}
       {!isLoading && !isError && projects && projects.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
@@ -203,7 +179,6 @@ export const ProjectsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex items-center gap-1">
                     {canCreateOrEdit && (
                       <button
@@ -257,7 +232,7 @@ export const ProjectsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Project Create / Edit Modal */}
+      {/* Modal */}
       <ProjectModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
