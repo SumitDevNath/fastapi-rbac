@@ -100,10 +100,11 @@ export const ProjectsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            Project Management
+            List of prjects and their descriptions in the system.
           </h1>
           <p className="text-sm text-slate-500">
-            Real-time CRUD resource center with decoupled state feedback.
+            You can create, edit, or delete projects based on your role
+            permissions.
           </p>
         </div>
 

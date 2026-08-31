@@ -55,7 +55,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
         <div>
           <h2 className="text-xl font-bold text-slate-900">Create Account</h2>
           <p className="text-xs text-slate-500">
-            Get started with role-based access
+            Provide your email, password, and initial role to create a new
+            account.
           </p>
         </div>
       </div>
@@ -129,7 +130,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             )}
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Initial Role
             </label>
@@ -142,7 +143,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               <option value="MANAGER">Manager (Management & Delete)</option>
               <option value="ADMIN">Admin (Full System Control)</option>
             </select>
-          </div>
+          </div> */}
 
           <button
             type="submit"

@@ -5,7 +5,7 @@ from app.api.routes import auth, health, resources, users
 from app.core.config import settings
 from app.db.database import Base, engine
 from app.exceptions.handlers import register_exception_handlers
-import app.db.models  # noqa: F401
+# import app.db.models  # noqa: F401
 
 
 @asynccontextmanager

@@ -28,7 +28,8 @@ class AuthService:
             raise ResourceConflictError("A user with this email address already exists.")
 
         hashed_password = get_password_hash(user_in.password)
-        assigned_role = user_in.role or UserRole.VIEWER
+        # assigned_role = user_in.role or UserRole.VIEWER
+        assigned_role = UserRole.VIEWER
 
         new_user = await self.user_repo.create(
             email=user_in.email,

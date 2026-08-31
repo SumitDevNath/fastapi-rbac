@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.db.models import UserRole
 
 
-# Shared properties across user schemas
+# Shared properties across user schemas. This class defines the common fields that are shared by multiple user-related schemas. so userregister, userupdate, userresponse will inherit from this class. This promotes code reusability and consistency across the application.
 class UserBase(BaseModel):
     email: EmailStr = Field(
         ...,

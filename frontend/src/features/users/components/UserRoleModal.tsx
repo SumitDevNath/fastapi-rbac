@@ -95,7 +95,7 @@ export const UserRoleModal: React.FC<UserRoleModalProps> = ({
               <option value="MANAGER">
                 MANAGER — Project delete & user list
               </option>
-              <option value="ADMIN">ADMIN — Full system governance</option>
+              {/* <option value="ADMIN">ADMIN — Full system governance</option> */}
             </select>
             {errors.role && (
               <p className="text-xs text-rose-500 mt-1">

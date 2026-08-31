@@ -102,7 +102,7 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-800">
-      {/* 1. Desktop Persistent Sidebar (Hidden on mobile) */}
+      {/* 1. Desktop Persistent Sidebar */}
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col shrink-0 sticky top-0 h-screen">
         <NavigationContent />
       </aside>
@@ -124,32 +124,20 @@ export const AppLayout: React.FC = () => {
         <NavigationContent />
       </div>
 
-      {/* 4. Main Scrollable Viewport */}
+      {/* 4. Main Viewport */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button (Mobile only) */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              aria-label="Open Navigation Menu"
-            >
-              <Menu size={22} />
-            </button>
-            <h2 className="text-sm font-semibold text-slate-700 truncate">
-              Enterprise Control Plane
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ● API Online
-            </span>
-          </div>
+        {/* Mobile-Only Top Bar for Hamburger Toggle */}
+        <header className="md:hidden h-14 bg-white border-b border-slate-200 flex items-center px-4 sticky top-0 z-10">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu size={22} />
+          </button>
         </header>
 
-        {/* Page Content Container with Fluid Padding */}
+        {/* Page Content Container */}
         <div className="p-4 sm:p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto">
           <Outlet />
         </div>
