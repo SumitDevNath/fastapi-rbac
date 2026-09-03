@@ -1,79 +1,76 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+# app/api/routes/users.py
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.permissions import Permission
+
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import User, UserRole
 from app.dependencies.auth import get_current_user
-from app.dependencies.permissions import require_permission
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
+from app.exceptions.custom_exceptions import PermissionDeniedError, ResourceConflictError, ResourceNotFoundError
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
+@router.post(
+    "",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create User"
+)
+async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    """Creates a new user (Replaces old /auth/register)."""
+    # SECURITY FIX: Force the role to standard 'user' regardless of what the payload says.
+    # This prevents Mass Assignment attacks where hackers try to register as ADMIN.
+    user_in.role = UserRole.USER
+    user_repo = UserRepository(db)
+    existing_user = await user_repo.get_by_email(user_in.email)
+    if existing_user:
+        raise ResourceConflictError("A user with this email address already exists.")
+    
+    return await user_repo.create(user_in)
 
 @router.get(
     "/me",
     response_model=UserResponse,
     status_code=status.HTTP_200_OK,
-    summary="Get Current User Profile"
+    summary="Get Me"
 )
-async def read_users_me(
-    current_user: User = Depends(get_current_user)
-):
-    """Accessible by ANY authenticated user."""
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    """Returns the currently authenticated user's profile."""
     return current_user
 
-
-@router.get(
-    "",
-    response_model=List[UserResponse],
-    status_code=status.HTTP_200_OK,
-    summary="List all users (Admin & Manager only)"
-)
-async def list_users(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_permission(Permission.USER_READ))
-):
-    """
-    Requires 'user:read' permission (Admin & Manager).
-    """
-    stmt = select(User).order_by(User.id)
-    result = await db.execute(stmt)
-    users = result.scalars().all()
-    return users
-
-
-@router.patch(
-    "/{user_id}/role",
+@router.put(
+    "/{user_id}",
     response_model=UserResponse,
     status_code=status.HTTP_200_OK,
-    summary="Update user role or status (Admin only)"
+    summary="Update User"
 )
-async def update_user_role(
-    user_id: int,
-    user_update: UserUpdate,
+async def update_user(
+    user_id: int, 
+    user_update: UserUpdate, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_permission(Permission.USER_MANAGE))
+    current_user: User = Depends(get_current_user)  # 1. Require authentication!
 ):
-    """
-    Requires 'user:manage' permission (Admin only).
-    """
+    """Updates user fields securely with field-level role checks."""
+    
+    # 2. Prevent users from editing OTHER users (unless they are an ADMIN)
+    if current_user.id != user_id and current_user.role != UserRole.ADMIN:
+        raise PermissionDeniedError("You do not have permission to update other users' profiles.")
+        
+    # 3. Prevent standard users from escalating privileges or approving themselves
+    restricted_fields = {"status", "role", "is_active", "auth_provider"}
+    update_data = user_update.model_dump(exclude_unset=True)
+    
+    # Check if the user is trying to change any of the restricted fields
+    attempting_restricted_update = any(field in update_data for field in restricted_fields)
+    
+    if attempting_restricted_update and current_user.role != UserRole.ADMIN:
+        raise PermissionDeniedError("Security violation: Only Administrators can modify account status, roles, or active states.")
+        
+    # 4. Proceed with the update if all security checks pass
     user_repo = UserRepository(db)
     target_user = await user_repo.get_by_id(user_id)
-
     if not target_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-
-    if user_update.role is not None:
-        target_user.role = user_update.role
-    if user_update.is_active is not None:
-        target_user.is_active = user_update.is_active
-
-    await db.commit()
-    await db.refresh(target_user)
-    return target_user
+        raise ResourceNotFoundError(resource_name="User", identifier=user_id)
+    
+    return await user_repo.update(target_user, user_update)

@@ -89,28 +89,28 @@ def register_exception_handlers(app: FastAPI) -> None:
             }
         )
 
-    @app.exception_handler(RequestValidationError)
-    async def handle_validation_error(request: Request, exc: RequestValidationError):
-        # Format Pydantic errors into a clean, unified structure
-        errors = []
-        for err in exc.errors():
-            field = " -> ".join(str(loc) for loc in err.get("loc", []))
-            errors.append({
-                "field": field,
-                "issue": err.get("msg"),
-                "type": err.get("type")
-            })
+    # @app.exception_handler(RequestValidationError)
+    # async def handle_validation_error(request: Request, exc: RequestValidationError):
+    #     # Format Pydantic errors into a clean, unified structure
+    #     errors = []
+    #     for err in exc.errors():
+    #         field = " -> ".join(str(loc) for loc in err.get("loc", []))
+    #         errors.append({
+    #             "field": field,
+    #             "issue": err.get("msg"),
+    #             "type": err.get("type")
+    #         })
 
-        return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={
-                "error": {
-                    "code": "VALIDATION_ERROR",
-                    "message": "The request body or query parameters failed schema validation.",
-                    "details": errors
-                }
-            }
-        )
+    #     return JSONResponse(
+    #         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    #         content={
+    #             "error": {
+    #                 "code": "VALIDATION_ERROR",
+    #                 "message": "The request body or query parameters failed schema validation.",
+    #                 "details": errors
+    #             }
+    #         }
+    #     )
 
     @app.exception_handler(Exception)
     async def handle_unhandled_exception(request: Request, exc: Exception):

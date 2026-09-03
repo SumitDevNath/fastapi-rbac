@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import secrets
 from typing import Any, Optional
 import jwt
 from pwdlib import PasswordHash
@@ -59,3 +61,16 @@ def create_access_token(
         algorithm=settings.JWT_ALGORITHM
     )
     return encoded_jwt
+
+def generate_refresh_token() -> tuple[str, str]:
+    """
+    Generates a secure random refresh token and its SHA-256 hash.
+    Returns: (raw_token, token_hash)
+    """
+    # 1. Generate 32 bytes of secure random data, URL-safe base64 encoded (43 chars)
+    raw_token = secrets.token_urlsafe(32)
+    
+    # 2. Generate a SHA-256 hash of the token for database storage
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    
+    return raw_token, token_hash

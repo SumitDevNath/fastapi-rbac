@@ -37,7 +37,7 @@ ROLE_PERMISSIONS: dict[UserRole, Set[Permission]] = {
         Permission.PROJECT_READ,
         Permission.PROJECT_UPDATE,
     },
-    UserRole.VIEWER: {
+    UserRole.USER: {
         Permission.PROJECT_READ,
     },
 }
