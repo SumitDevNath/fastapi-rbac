@@ -78,4 +78,10 @@ async def get_current_user(
             detail="User account is deactivated."
         )
 
+    if user.status != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account pending administrator approval. Access restricted."
+        )
+
     return user

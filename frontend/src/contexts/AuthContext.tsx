@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { storage } from "../utils/storage";
-import type { User, UserRole } from "../types/auth";
-import type { LoginFormData, RegisterFormData } from "../schemas/authSchemas";
+import { useQueryClient } from "@tanstack/react-query";
 import { authService } from "../features/auth/api/authService";
+import type { LoginFormData, RegisterFormData } from "../schemas/authSchemas";
+import type { User, UserRole } from "../types/auth";
+import { storage } from "../utils/storage";
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   role: UserRole | null;
   loading: boolean;
   login: (credentials: LoginFormData) => Promise<void>;
   register: (data: RegisterFormData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,27 +22,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(storage.getToken());
+  const [accessToken, setAccessToken] = useState<string | null>(
+    storage.getAccessToken(),
+  );
   const [loading, setLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
-  // Rehydrate user session on initial page load / refresh
   useEffect(() => {
     const initializeAuth = async () => {
-      const savedToken = storage.getToken();
-      if (!savedToken) {
+      const token = storage.getAccessToken();
+      if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-        setToken(savedToken);
+        const validatedUser = await authService.validateToken();
+        setUser(validatedUser);
+        setAccessToken(token);
       } catch (error) {
-        console.error("Session expired or invalid token:", error);
-        storage.clearToken();
+        console.error("Session validation error:", error);
+        storage.clearTokens();
         setUser(null);
-        setToken(null);
+        setAccessToken(null);
       } finally {
         setLoading(false);
       }
@@ -52,8 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (credentials: LoginFormData) => {
     const response = await authService.login(credentials);
-    storage.setToken(response.access_token);
-    setToken(response.access_token);
+    storage.setTokens(
+      response.tokens.access_token,
+      response.tokens.refresh_token,
+    );
+    setAccessToken(response.tokens.access_token);
     setUser(response.user);
   };
 
@@ -61,16 +67,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await authService.register(data);
   };
 
-  const logout = () => {
-    storage.clearToken();
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    const currentRefreshToken = storage.getRefreshToken();
+    try {
+      if (currentRefreshToken) {
+        await authService.logout(currentRefreshToken);
+      }
+    } catch (e) {
+      console.warn(
+        "Backend logout encountered error; proceeding with local cleanup",
+        e,
+      );
+    } finally {
+      storage.clearTokens();
+      setAccessToken(null);
+      setUser(null);
+      queryClient.clear();
+    }
   };
 
   const value: AuthContextType = {
     user,
-    token,
-    isAuthenticated: !!token && !!user,
+    accessToken,
+    isAuthenticated: !!accessToken && !!user,
     role: user?.role || null,
     loading,
     login,

@@ -1,5 +1,5 @@
 # app/api/routes/users.py
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -8,6 +8,11 @@ from app.dependencies.auth import get_current_user
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.exceptions.custom_exceptions import PermissionDeniedError, ResourceConflictError, ResourceNotFoundError
+from typing import List, Optional
+from sqlalchemy import select
+from app.dependencies.permissions import require_permission
+from app.core.permissions import Permission
+from app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -28,6 +33,38 @@ async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         raise ResourceConflictError("A user with this email address already exists.")
     
     return await user_repo.create(user_in)
+
+@router.get(
+    "",
+    response_model=List[UserResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List all users"
+)
+async def list_users(
+    role: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
+    facility_id: Optional[str] = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission(Permission.USER_READ))
+):
+    """
+    Retrieves all users. Restricted to ADMIN and MANAGER via USER_READ permission.
+    """
+    stmt = select(User)
+    
+    if role:
+        stmt = stmt.where(User.role == role)
+    if status:
+        stmt = stmt.where(User.status == status)
+    if facility_id:
+        stmt = stmt.where(User.facility_id == facility_id)
+        
+    stmt = stmt.offset(skip).limit(limit).order_by(User.id.asc())
+    
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
 
 @router.get(
     "/me",

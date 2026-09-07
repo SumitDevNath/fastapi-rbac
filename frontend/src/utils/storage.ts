@@ -1,28 +1,38 @@
-const TOKEN_KEY = "auth_token";
+const ACCESS_TOKEN_KEY = "auth_access_token";
+const REFRESH_TOKEN_KEY = "auth_refresh_token";
 
 export const storage = {
-  getToken: (): string | null => {
+  getAccessToken: (): string | null => {
     try {
-      return localStorage.getItem(TOKEN_KEY);
-    } catch (e) {
-      console.error("Failed to read token from localStorage", e);
+      return localStorage.getItem(ACCESS_TOKEN_KEY);
+    } catch {
       return null;
     }
   },
 
-  setToken: (token: string): void => {
+  getRefreshToken: (): string | null => {
     try {
-      localStorage.setItem(TOKEN_KEY, token);
-    } catch (e) {
-      console.error("Failed to write token to localStorage", e);
+      return localStorage.getItem(REFRESH_TOKEN_KEY);
+    } catch {
+      return null;
     }
   },
 
-  clearToken: (): void => {
+  setTokens: (accessToken: string, refreshToken: string): void => {
     try {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     } catch (e) {
-      console.error("Failed to clear token from localStorage", e);
+      console.error("Failed to write tokens to localStorage", e);
+    }
+  },
+
+  clearTokens: (): void => {
+    try {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    } catch (e) {
+      console.error("Failed to clear tokens from localStorage", e);
     }
   },
 };

@@ -3,21 +3,49 @@ import type {
   LoginFormData,
   RegisterFormData,
 } from "../../../schemas/authSchemas";
-import type { TokenResponse, User } from "../../../types/auth";
+import type {
+  LoginResponse,
+  LogoutResponse,
+  Tokens,
+  User,
+} from "../../../types/auth";
 
 export const authService = {
-  login: async (credentials: LoginFormData): Promise<TokenResponse> => {
-    return await apiClient.post<unknown, TokenResponse>(
+  login: async (credentials: LoginFormData): Promise<LoginResponse> => {
+    return await apiClient.post<unknown, LoginResponse>(
       "/auth/login",
       credentials,
     );
   },
 
   register: async (data: RegisterFormData): Promise<User> => {
-    return await apiClient.post<unknown, User>("/auth/register", data);
+    const nameParts = data.full_name.trim().split(" ");
+    const first_name = nameParts[0];
+    const last_name = nameParts.slice(1).join(" ") || undefined;
+
+    const payload = {
+      email: data.email,
+      password: data.password,
+      first_name,
+      last_name,
+    };
+
+    return await apiClient.post<unknown, User>("/users", payload);
   },
 
-  getCurrentUser: async (): Promise<User> => {
-    return await apiClient.get<unknown, User>("/users/me");
+  refreshToken: async (refreshToken: string): Promise<Tokens> => {
+    return await apiClient.post<unknown, Tokens>("/auth/refresh", {
+      refresh_token: refreshToken,
+    });
+  },
+
+  validateToken: async (): Promise<User> => {
+    return await apiClient.get<unknown, User>("/auth/validate");
+  },
+
+  logout: async (refreshToken: string): Promise<LogoutResponse> => {
+    return await apiClient.post<unknown, LogoutResponse>("/auth/logout", {
+      refresh_token: refreshToken,
+    });
   },
 };

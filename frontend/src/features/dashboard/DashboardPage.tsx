@@ -42,12 +42,12 @@ export const DashboardPage: React.FC = () => {
   const totalProjects = projects?.length || 0;
   const totalUsers = users?.length || 0;
 
-  // 1. Compute Role Distribution Data for BarChart & PieChart
+  // Compute Role Distribution Data
   const roleCounts: Record<string, number> = {
     ADMIN: 0,
     MANAGER: 0,
     EDITOR: 0,
-    VIEWER: 0,
+    User: 0,
   };
 
   let activeUsersCount = 0;
@@ -55,8 +55,9 @@ export const DashboardPage: React.FC = () => {
 
   if (users) {
     users.forEach((u) => {
-      if (roleCounts[u.role] !== undefined) {
-        roleCounts[u.role]++;
+      const key = u.role === "user" ? "User" : u.role;
+      if (roleCounts[key] !== undefined) {
+        roleCounts[key]++;
       }
       if (u.is_active) {
         activeUsersCount++;
@@ -66,11 +67,12 @@ export const DashboardPage: React.FC = () => {
     });
   }
 
-  const roleChartData = Object.entries(roleCounts).map(([roleName, count]) => ({
-    name: roleName,
-    count,
-    color: ROLE_COLORS[roleName] || "#64748b",
-  }));
+  const roleChartData = [
+    { name: "ADMIN", count: roleCounts.ADMIN, color: "#9333ea" },
+    { name: "MANAGER", count: roleCounts.MANAGER, color: "#2563eb" },
+    { name: "EDITOR", count: roleCounts.EDITOR, color: "#059669" },
+    { name: "User", count: roleCounts.User, color: "#64748b" },
+  ];
 
   const userStatusData = [
     {

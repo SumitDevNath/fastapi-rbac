@@ -1,33 +1,49 @@
-export type UserRole = "ADMIN" | "MANAGER" | "EDITOR" | "VIEWER";
+export type UserRole = "ADMIN" | "MANAGER" | "EDITOR" | "user";
 
 export interface User {
   id: number;
-  username: string;
   email: string;
   role: UserRole;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  status: "string";
-  auth_provider: "string";
-  must_change_password: true;
-  hris_id: "string";
-  facility_id: "string";
-  lab_id: "string";
-  mobile: "string";
-  first_name: "string";
-  last_name: "string";
-  division_id: "string";
-  district_id: "string";
-  upazila_id: "string";
-  union_id: "string";
+  username?: string | null;
+  status?: string | null;
+  auth_provider?: string | null;
+  must_change_password?: boolean | null;
+  hris_id?: string | null;
+  facility_id?: string | null;
+  lab_id?: string | null;
+  mobile?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  division_id?: string | null;
+  district_id?: string | null;
+  upazila_id?: string | null;
+  union_id?: string | null;
 }
 
-export interface TokenResponse {
+export interface Tokens {
   access_token: string;
   refresh_token: string;
   token_type: string;
+}
+
+export interface LoginResponse {
   user: User;
+  tokens: Tokens;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface LogoutRequest {
+  refresh_token: string;
+}
+
+export interface LogoutResponse {
+  message: string;
 }
 
 export interface ApiErrorDetail {
