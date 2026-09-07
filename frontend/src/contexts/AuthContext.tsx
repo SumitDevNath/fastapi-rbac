@@ -69,6 +69,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     const currentRefreshToken = storage.getRefreshToken();
+
+    // 1. Cancel any active outgoing background queries immediately
+    // await queryClient.cancelQueries();
+
+    // 2. Clear all cached server state
+    // queryClient.clear();
+
     try {
       if (currentRefreshToken) {
         await authService.logout(currentRefreshToken);

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectService } from "../api/projectService";
 import type { ProjectFormData } from "../../../schemas/projectSchemas";
+// import { useAuth } from "../../../contexts/AuthContext";
 
 // Centralized Query Keys
 export const projectKeys = {
@@ -12,9 +13,12 @@ export const projectKeys = {
 
 // 1. Fetch Queries
 export const useProjects = () => {
+  // const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: projectKeys.lists(),
     queryFn: projectService.getAll,
+    // Do not run this query if the user is logged out:
+    // enabled: isAuthenticated,
   });
 };
 

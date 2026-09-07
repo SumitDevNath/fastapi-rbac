@@ -4,6 +4,7 @@ import type {
   UserAdminUpdateFormData,
   UserSelfUpdateFormData,
 } from "../../../schemas/userSchemas";
+// import { useAuth } from "../../../contexts/AuthContext";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -15,9 +16,12 @@ export const userKeys = {
 };
 
 export const useUsers = (filters?: UserFilterParams) => {
+  // const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: userKeys.list(filters),
     queryFn: () => userService.getAll(filters),
+    // Do not run this query if the user is logged out:
+    // enabled: isAuthenticated,
   });
 };
 

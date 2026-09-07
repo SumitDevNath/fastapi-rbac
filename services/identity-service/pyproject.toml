@@ -1,0 +1,17 @@
+[project]
+name = "identity-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "aiosqlite",
+    "pydantic",
+    "pydantic-settings",
+    "email-validator",
+    "PyJWT",
+    "pwdlib[argon2]",
+    "cryptography"
+]

@@ -1,0 +1,3 @@
+services/identity-service/keys/private/*
+.env
+services/identity-service/keys/public/*
