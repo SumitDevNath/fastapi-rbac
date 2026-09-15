@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import (
     Boolean,
-    Column,
+
     DateTime,
     Enum as SQLEnum,
     ForeignKey,
@@ -20,7 +20,9 @@ class UserRole(str, enum.Enum):
     MANAGER = "MANAGER"
     EDITOR = "EDITOR"
     # VIEWER = "VIEWER"
-    USER = "user"  # Default role for new users, can be changed later
+    USER = "user"
+    FACILITY = "facility"
+
 
 
 class User(Base):
@@ -29,7 +31,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
     username: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True, nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     
     role: Mapped[str] = mapped_column(String(50), default=UserRole.USER.value, nullable=False)
     status: Mapped[Optional[str]] = mapped_column(String(50), default="pending", nullable=True)
@@ -55,7 +57,7 @@ class User(Base):
 
     # Relationships
     projects: Mapped[List["Project"]] = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
-    refresh_sessions: Mapped[List["RefreshToken"]] = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    # refresh_sessions: Mapped[List["RefreshToken"]] = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
 
 class Project(Base):
@@ -83,25 +85,3 @@ class Project(Base):
 
     # Many-to-1 Relationship: Many Projects belong to One User
     owner: Mapped["User"] = relationship("User", back_populates="projects")
-
-class RefreshToken(Base):
-    __tablename__ = "refresh_tokens"
-    
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer, 
-        ForeignKey("users.id", ondelete="CASCADE"), 
-        nullable=False, 
-        index=True
-    )
-    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
-        nullable=False
-    )
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    # Relationship back to the user
-    user: Mapped["User"] = relationship("User", back_populates="refresh_sessions")

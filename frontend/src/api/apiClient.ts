@@ -1,8 +1,166 @@
+// import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+// import { storage } from "../utils/storage";
+
+// export const apiClient = axios.create({
+//   baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1",
+//   timeout: 15000,
+//   headers: {
+//     "Content-Type": "application/json",
+//     Accept: "application/json",
+//   },
+// });
+
+// // Request Interceptor: Attach Access Token
+// apiClient.interceptors.request.use(
+//   (config: InternalAxiosRequestConfig) => {
+//     const token = storage.getAccessToken();
+//     if (token && config.headers) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   },
+//   (error: AxiosError) => Promise.reject(error),
+// );
+
+// // Concurrency mutex state for Refresh Token rotation
+// let isRefreshing = false;
+// let failedQueue: Array<{
+//   resolve: (token: string) => void;
+//   reject: (error: unknown) => void;
+// }> = [];
+
+// const processQueue = (error: unknown, token: string | null = null) => {
+//   failedQueue.forEach((prom) => {
+//     if (token) {
+//       prom.resolve(token);
+//     } else {
+//       prom.reject(error);
+//     }
+//   });
+//   failedQueue = [];
+// };
+
+// // Response Interceptor: Seamless Refresh Rotation
+// apiClient.interceptors.response.use(
+//   (response) => response.data,
+//   async (
+//     error: AxiosError<{
+//       error?: { code: string; message: string; details?: unknown };
+//       detail?: unknown;
+//     }>,
+//   ) => {
+//     const originalRequest = error.config as InternalAxiosRequestConfig & {
+//       _retry?: boolean;
+//     };
+
+//     if (!error.response) {
+//       return Promise.reject(
+//         new Error("Network error: Unable to connect to backend server."),
+//       );
+//     }
+
+//     const { status, data } = error.response;
+//     const requestUrl = originalRequest.url || "";
+
+//     // Bypass refresh logic for auth lifecycle endpoints to avoid infinite loops
+//     const isAuthEndpoint =
+//       requestUrl.includes("/auth/login") ||
+//       requestUrl.includes("/auth/register") ||
+//       requestUrl.includes("/auth/refresh") ||
+//       requestUrl.includes("/auth/logout");
+
+//     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+//       const currentRefreshToken = storage.getRefreshToken();
+
+//       if (!currentRefreshToken) {
+//         storage.clearTokens();
+//         if (!window.location.pathname.includes("/login")) {
+//           window.location.href = "/login?expired=true";
+//         }
+//         return Promise.reject(
+//           new Error("Session expired. Please log in again."),
+//         );
+//       }
+
+//       if (isRefreshing) {
+//         // Queue parallel requests until refresh completes
+//         return new Promise((resolve, reject) => {
+//           failedQueue.push({ resolve, reject });
+//         })
+//           .then((newToken) => {
+//             if (originalRequest.headers) {
+//               originalRequest.headers.Authorization = `Bearer ${newToken}`;
+//             }
+//             return apiClient(originalRequest);
+//           })
+//           .catch((err) => Promise.reject(err));
+//       }
+
+//       originalRequest._retry = true;
+//       isRefreshing = true;
+
+//       try {
+//         // Direct call to refresh endpoint bypassing standard interceptor
+//         const response = await axios.post(
+//           `${apiClient.defaults.baseURL}/auth/refresh`,
+//           { refresh_token: currentRefreshToken },
+//           { headers: { "Content-Type": "application/json" } },
+//         );
+
+//         const { access_token, refresh_token } = response.data;
+//         // Atomically rotate tokens in storage
+//         storage.setTokens(access_token, refresh_token);
+
+//         processQueue(null, access_token);
+
+//         if (originalRequest.headers) {
+//           originalRequest.headers.Authorization = `Bearer ${access_token}`;
+//         }
+//         return apiClient(originalRequest);
+//       } catch (refreshErr) {
+//         processQueue(refreshErr, null);
+//         storage.clearTokens();
+//         if (!window.location.pathname.includes("/login")) {
+//           window.location.href = "/login?expired=true";
+//         }
+//         return Promise.reject(
+//           new Error("Session terminated. Please log in again."),
+//         );
+//       } finally {
+//         isRefreshing = false;
+//       }
+//     }
+
+//     // Standardize error message extraction
+//     let serverMessage = data?.error?.message;
+//     if (!serverMessage && Array.isArray(data?.detail)) {
+//       serverMessage = data.detail
+//         .map((d: { msg?: string }) => d.msg)
+//         .join(", ");
+//     } else if (typeof data?.detail === "string") {
+//       serverMessage = data.detail;
+//     }
+
+//     return Promise.reject(
+//       new Error(
+//         serverMessage || error.message || "An unexpected error occurred.",
+//       ),
+//     );
+//   },
+// );
+
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { storage } from "../utils/storage";
 
-export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1",
+const AUTH_URL =
+  // import.meta.env.VITE_AUTH_API_URL || "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_AUTH_API_URL || "/dev-api/api/auth/api/v1";
+const RESOURCE_URL =
+  import.meta.env.VITE_RESOURCE_API_URL || "http://127.0.0.1:8000/api/v1";
+
+// 1. Client for Auth Service (login, register, validate, refresh, logout)
+export const authClient = axios.create({
+  baseURL: AUTH_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -10,19 +168,36 @@ export const apiClient = axios.create({
   },
 });
 
-// Request Interceptor: Attach Access Token
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = storage.getAccessToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+// 2. Client for the Unknown Resource Service
+export const resourceClient = axios.create({
+  baseURL: RESOURCE_URL,
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
-  (error: AxiosError) => Promise.reject(error),
+});
+
+// 3. Backward-compatibility alias for legacy services (projectService, userService)
+export const apiClient = resourceClient;
+
+// Shared Request Interceptor: Injects Bearer token into BOTH clients
+const attachTokenInterceptor = (config: InternalAxiosRequestConfig) => {
+  const token = storage.getAccessToken();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+authClient.interceptors.request.use(attachTokenInterceptor, (err) =>
+  Promise.reject(err),
+);
+resourceClient.interceptors.request.use(attachTokenInterceptor, (err) =>
+  Promise.reject(err),
 );
 
-// Concurrency mutex state for Refresh Token rotation
+// Silent Refresh Queue logic
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -31,120 +206,74 @@ let failedQueue: Array<{
 
 const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
-    if (token) {
-      prom.resolve(token);
-    } else {
+    if (error) {
       prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
     }
   });
   failedQueue = [];
 };
 
-// Response Interceptor: Seamless Refresh Rotation
-apiClient.interceptors.response.use(
-  (response) => response.data,
-  async (
-    error: AxiosError<{
-      error?: { code: string; message: string; details?: unknown };
-      detail?: unknown;
-    }>,
-  ) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+// Response Interceptor for handling token expiration (applied to both)
+const setupResponseInterceptor = (client: typeof authClient) => {
+  client.interceptors.response.use(
+    (response) => response.data,
+    async (error: AxiosError) => {
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: boolean;
+      };
+      const status = error.response?.status;
 
-    if (!error.response) {
-      return Promise.reject(
-        new Error("Network error: Unable to connect to backend server."),
-      );
-    }
+      // Don't intercept 401s on the login/refresh endpoints themselves
+      const isAuthUrl =
+        originalRequest?.url?.includes("/auth/login") ||
+        originalRequest?.url?.includes("/auth/refresh");
 
-    const { status, data } = error.response;
-    const requestUrl = originalRequest.url || "";
+      if (status === 401 && !originalRequest._retry && !isAuthUrl) {
+        originalRequest._retry = true;
 
-    // Bypass refresh logic for auth lifecycle endpoints to avoid infinite loops
-    const isAuthEndpoint =
-      requestUrl.includes("/auth/login") ||
-      requestUrl.includes("/auth/register") ||
-      requestUrl.includes("/auth/refresh") ||
-      requestUrl.includes("/auth/logout");
-
-    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
-      const currentRefreshToken = storage.getRefreshToken();
-
-      if (!currentRefreshToken) {
-        storage.clearTokens();
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login?expired=true";
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          }).then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return client(originalRequest);
+          });
         }
-        return Promise.reject(
-          new Error("Session expired. Please log in again."),
-        );
-      }
 
-      if (isRefreshing) {
-        // Queue parallel requests until refresh completes
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((newToken) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            }
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
+        isRefreshing = true;
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+        try {
+          const refreshToken = storage.getRefreshToken();
+          if (!refreshToken) throw new Error("No refresh token available");
 
-      try {
-        // Direct call to refresh endpoint bypassing standard interceptor
-        const response = await axios.post(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          { refresh_token: currentRefreshToken },
-          { headers: { "Content-Type": "application/json" } },
-        );
+          // Always refresh via Auth Service!
+          const res = await axios.post(`${AUTH_URL}/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
 
-        const { access_token, refresh_token } = response.data;
-        // Atomically rotate tokens in storage
-        storage.setTokens(access_token, refresh_token);
+          const { access_token, refresh_token: newRefresh } = res.data;
+          storage.setTokens(access_token, newRefresh || refreshToken);
 
-        processQueue(null, access_token);
-
-        if (originalRequest.headers) {
+          processQueue(null, access_token);
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+          return client(originalRequest);
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          storage.clearTokens();
+          window.location.href = "/login?session_expired=true";
+          return Promise.reject(refreshErr);
+        } finally {
+          isRefreshing = false;
         }
-        return apiClient(originalRequest);
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        storage.clearTokens();
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login?expired=true";
-        }
-        return Promise.reject(
-          new Error("Session terminated. Please log in again."),
-        );
-      } finally {
-        isRefreshing = false;
       }
-    }
 
-    // Standardize error message extraction
-    let serverMessage = data?.error?.message;
-    if (!serverMessage && Array.isArray(data?.detail)) {
-      serverMessage = data.detail
-        .map((d: { msg?: string }) => d.msg)
-        .join(", ");
-    } else if (typeof data?.detail === "string") {
-      serverMessage = data.detail;
-    }
+      return Promise.reject(error);
+    },
+  );
+};
 
-    return Promise.reject(
-      new Error(
-        serverMessage || error.message || "An unexpected error occurred.",
-      ),
-    );
-  },
-);
+setupResponseInterceptor(authClient);
+setupResponseInterceptor(resourceClient);

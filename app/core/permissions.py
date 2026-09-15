@@ -40,6 +40,11 @@ ROLE_PERMISSIONS: dict[UserRole, Set[Permission]] = {
     UserRole.USER: {
         Permission.PROJECT_READ,
     },
+    UserRole.FACILITY: {
+        Permission.PROJECT_READ,
+        Permission.PROJECT_CREATE,
+        Permission.PROJECT_UPDATE,
+    },
 }
 
 

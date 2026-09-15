@@ -10,6 +10,7 @@ import {
   Shield,
   Menu,
   X,
+  Database,
 } from "lucide-react";
 
 export const AppLayout: React.FC = () => {
@@ -66,6 +67,11 @@ export const AppLayout: React.FC = () => {
         <NavLink to="/projects" className={navLinkClass}>
           <FolderKanban size={18} />
           <span>Projects</span>
+        </NavLink>
+
+        <NavLink to="/explorer" className={navLinkClass}>
+          <Database size={18} />
+          <span>Resource Service</span>
         </NavLink>
 
         {(role === "ADMIN" || role === "MANAGER") && (

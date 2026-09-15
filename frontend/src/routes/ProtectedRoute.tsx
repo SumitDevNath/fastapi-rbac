@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC = () => {
   }
 
   // Block users whose status is not "approved"
-  if (user?.status !== "approved") {
+  if (user?.status !== "active") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
         <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center space-y-4">

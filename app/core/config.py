@@ -4,18 +4,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # App Metadata
-    PROJECT_NAME: str
+    PROJECT_NAME: str 
     VERSION: str
     API_V1_STR: str
 
     # Database
     DATABASE_URL: str
 
-    # JWT Cryptographic Secrets
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    REFRESH_TOKEN_EXPIRE_DAYS: int
+    # External Services
+    DGHS_AUTH_VALIDATE_URL: str
 
     # CORS Whitelist (Parsed automatically from JSON or comma-separated string)
     CORS_ORIGINS: List[str]

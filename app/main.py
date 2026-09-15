@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import auth, health, resources, users
+from app.api.routes import health, resources
 from app.core.config import settings
 from app.db.database import Base, engine
 from app.exceptions.handlers import register_exception_handlers
@@ -40,8 +40,8 @@ app.add_middleware(
 
 # 3. Register Sub-Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(users.router, prefix=settings.API_V1_STR)
+# app.include_router(auth.router, prefix=settings.API_V1_STR)  
+# app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(resources.router, prefix=settings.API_V1_STR)
 
 

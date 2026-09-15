@@ -40,27 +40,6 @@ class UserCreate(UserBase):
     upazila_id: Optional[str] = None
     union_id: Optional[str] = None
 
-
-# Schema for Updating User Details (Input - Admin only)
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    role: Optional[UserRole] = None
-    status: Optional[str] = None
-    auth_provider: Optional[str] = None
-    facility_id: Optional[str] = None
-    lab_id: Optional[str] = None
-    mobile: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    division_id: Optional[str] = None
-    district_id: Optional[str] = None
-    upazila_id: Optional[str] = None
-    union_id: Optional[str] = None
-    is_active: Optional[bool] = None
-
-
 # Safe Schema for returning User data to clients (Output)
 class UserResponse(UserBase):
     id: int

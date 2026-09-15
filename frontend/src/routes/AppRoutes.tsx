@@ -120,6 +120,7 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { ProjectsPage } from "../features/projects/components/ProjectsPage";
 import { UsersPage } from "../features/users/components/UsersPage";
 import { UnauthorizedPage } from "../components/common/UnauthorizedPage";
+import { ResourceExplorerPage } from "../features/resources/components/ResourceExplorerPage";
 
 const PublicAuthWrapper: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -163,6 +164,7 @@ export const AppRoutes: React.FC = () => {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/explorer" element={<ResourceExplorerPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Admin & Manager Restricted */}

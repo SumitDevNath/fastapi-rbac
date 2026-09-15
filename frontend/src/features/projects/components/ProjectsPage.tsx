@@ -44,7 +44,10 @@ export const ProjectsPage: React.FC = () => {
   const [modalError, setModalError] = useState<string | null>(null);
 
   const canCreateOrEdit =
-    role === "ADMIN" || role === "MANAGER" || role === "EDITOR";
+    role === "ADMIN" ||
+    role === "MANAGER" ||
+    role === "EDITOR" ||
+    role === "facility";
   const canDelete = role === "ADMIN" || role === "MANAGER";
 
   const handleOpenCreate = () => {
@@ -109,7 +112,7 @@ export const ProjectsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          {/* <button
             onClick={() => {
               refetch();
               toast.info("Synchronizing cache with FastAPI...");
@@ -122,7 +125,7 @@ export const ProjectsPage: React.FC = () => {
               className={isFetching ? "animate-spin text-indigo-600" : ""}
             />
             <span>{isFetching ? "Syncing..." : "Sync Cache"}</span>
-          </button>
+          </button> */}
 
           {canCreateOrEdit && (
             <button
